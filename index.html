@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>Millionaire Quiz</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <style>
+        .btn {
+            white-space: normal !important;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Who Wants to be a Millionaire!?</h1>
+            <p class="lead">Have a go at our quiz!</p>
+        </div>
+    </div>
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-8">
+                    <div class="row">
+                        <div class="col">
+                            <div class="alert alert-dark">
+                                {{ questions[currentQuestion].questionText }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6" v-for="(answer, index) in questions[currentQuestion].options">
+                            <button type="button" class="btn btn-block btn-outline-dark m-1" v-on:click="checkAnswer(index)">
+                                {{ answer.answerText }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card border-dark">
+                        <div class="card-body">
+                            <div class="card border-dark m-1" 
+                                v-for="amount in amounts" 
+                                v-bind:class="{ 'bg-dark': isAmountActive(amount), 'text-white': isAmountActive(amount) }">
+                                <div class="card-body p-2">
+                                    {{ amount }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>        
+        </div>
+        <div class="modal" tabindex="-1" role="dialog" id="victoryModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" v-if="victory">You're a millionaire!</h5>
+                        <h5 class="modal-title" v-if="!victory">Bad luck</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="victory">
+                            Congratulations, you've won the quiz, which means you've:
+                            <ul>
+                                <li>Been listening to everything we say very intently</li>
+                                <li>Looked at the source code</li>
+                                <li>Have excellent luck and should purchase a lottery ticket</li>
+                                <li>Are some sort of all knowing entity</li>
+                            </ul>
+                        </div>
+                        <div v-if="!victory">
+                            Looks like you didn't make it this time, but not to worry as this is just the beta and this game will be coming to all good computer game stores near you soon so you can have another go!
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-dismiss="modal" v-if="victory" v-on:click="resetQuiz">
+                            YAYz0rz, I can has prize NAO!?
+                        </button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" v-if="!victory" v-on:click="resetQuiz">
+                            ONOES!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+        var app = new Vue({
+            el: '#app',
+            data: {
+                amounts: [
+                    '£1000000',
+                    '£500000',
+                    '£100000',
+                    '£50000',
+                    '£10000',
+                    '£5000',
+                    '£1000'
+                ],
+                currentQuestion: 0,
+                questions: randomlySelectQuestions(7),
+                victory: false
+            },
+            methods: {
+                checkAnswer: function(selectedAnswer) {
+                    if (this.questions[this.currentQuestion].options[selectedAnswer].isCorrectAnswer) {
+
+                        if (this.currentQuestion < this.amounts.length - 1) {
+                            this.currentQuestion++;
+                        } else {
+                            this.victory = true;
+                            $('#victoryModal').modal({ backdrop: 'static', keyboard: false });
+                        }                        
+                    } else {
+                        $('#victoryModal').modal({ backdrop: 'static', keyboard: false });
+                    }
+                },
+                isAmountActive: function(amount) {
+                    var index = this.amounts.indexOf(amount);
+                    var expectedIndex = this.amounts.length - 1 - this.currentQuestion;
+                    return index === expectedIndex;
+                },
+                resetQuiz: function() {
+                    this.victory = false;
+                    this.currentQuestion = 0;
+                    this.questions = randomlySelectQuestions(7);
+                }
+            }
+        });
+
+        function randomlySelectQuestions(numQuestions) {
+            var shuffled = shuffle(getAllQuestions());
+            var selectedQuestions = shuffled.slice(0, numQuestions);
+            var optionPrefixes = ['A', 'B', 'C', 'D'];
+
+            return selectedQuestions.map(question => {
+                var options = shuffle(question.options).map((option, index) => {
+                    return {
+                        answerText: optionPrefixes[index] + ': ' + option.answerText,
+                        isCorrectAnswer: option.isCorrectAnswer
+                    };
+                });
+
+                return {
+                    questionText: question.questionText,
+                    options
+                };
+            });
+        }
+
+        function shuffle(array) {
+              var currentIndex = array.length, temporaryValue, randomIndex;
+
+              // While there remain elements to shuffle...
+              while (0 !== currentIndex) {
+                    // Pick a remaining element...
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex -= 1;
+
+                    // And swap it with the current element.
+                    temporaryValue = array[currentIndex];
+                    array[currentIndex] = array[randomIndex];
+                    array[randomIndex] = temporaryValue;
+              }
+
+              return array;
+        }
+
+        function getAllQuestions() {
+            return [
+                {
+                    questionText: 'This is the first sample question',
+                    options: [
+                        {
+                            answerText: 'First answer',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Second answer, this is a long answer with more text to make sure it fits on the screen properly',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Third and correct answer',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: 'Fourth answer',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'This is the 2nd sample question',
+                    options: [
+                        {
+                            answerText: '1 CORRECT',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: '2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: '3',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: '4',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'This is the 3rd sample question',
+                    options: [
+                        {
+                            answerText: '1 answer',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: '2 CORRECT answer',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: '3 answer',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: '4 answer',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'This is the 4th sample question',
+                    options: [
+                        {
+                            answerText: 'Ans 1',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Ans 2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Ans 3',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Ans 4 (C)',
+                            isCorrectAnswer: true
+                        },
+                    ]
+                },
+                {
+                    questionText: 'Question 5',
+                    options: [
+                        {
+                            answerText: '3 answer',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: '2 (C)',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: '3 answer',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: '4 answer',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'Question 6 blah blah',
+                    options: [
+                        {
+                            answerText: 'A1',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'A2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'A3',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'A4 (C)',
+                            isCorrectAnswer: true
+                        },
+                    ]
+                },
+                {
+                    questionText: 'Question 7',
+                    options: [
+                        {
+                            answerText: 'Answer 1',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 3 (C)',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: 'Answer 4',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'Question 8',
+                    options: [
+                        {
+                            answerText: 'Answer 1 (C)',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: 'Answer 2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 3',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 4',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'Question 9',
+                    options: [
+                        {
+                            answerText: 'Answer 1 (C)',
+                            isCorrectAnswer: true
+                        },
+                        {
+                            answerText: 'Answer 2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 3',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 4',
+                            isCorrectAnswer: false
+                        },
+                    ]
+                },
+                {
+                    questionText: 'Question 10',
+                    options: [
+                        {
+                            answerText: 'Answer 1',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 2',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 3',
+                            isCorrectAnswer: false
+                        },
+                        {
+                            answerText: 'Answer 4 (C)',
+                            isCorrectAnswer: true
+                        },
+                    ]
+                }
+            ];
+        }        
+    </script>
+</body>
+</html>
